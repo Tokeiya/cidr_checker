@@ -208,4 +208,22 @@ mod tests {
 		let fixture = IPv4::from(0xC0_A8_0A_66);
 		assert_eq!(fixture.to_u32(), fixture.0)
 	}
+
+	#[test]
+	fn eq_test() {
+		let a = IPv4::from(129);
+		let b = IPv4::from(129);
+
+		assert!(a == b);
+		assert!(!(a != b));
+	}
+
+	#[test]
+	fn ne_test() {
+		let a = IPv4::from(129);
+		let b = IPv4::from(120);
+
+		assert!(!(a == b));
+		assert!(a != b);
+	}
 }

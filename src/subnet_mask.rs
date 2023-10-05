@@ -241,4 +241,22 @@ mod tests {
 
 		assert_eq!(actual, IPv4::try_from("192.168.10.255").unwrap())
 	}
+
+	#[test]
+	fn eq_test() {
+		let a = SubnetMask::new(1).unwrap();
+		let b = SubnetMask::new(1).unwrap();
+
+		assert!(a == b);
+		assert!(!(a != b));
+	}
+
+	#[test]
+	fn ne_test() {
+		let a = SubnetMask::new(1).unwrap();
+		let b = SubnetMask::new(2).unwrap();
+
+		assert!(!(a == b));
+		assert!(a != b);
+	}
 }
