@@ -4,6 +4,7 @@ pub enum Ipv4Error {
 	IndexOutOfRange,
 	InvalidFormat,
 	InvalidArrayLength,
+	InvalidValue
 }
 
 impl Ipv4Error {
@@ -12,6 +13,7 @@ impl Ipv4Error {
 			Ipv4Error::IndexOutOfRange => "Ipv4Error::IndexOutOfRange",
 			Ipv4Error::InvalidFormat => "Ipv4Error::InvalidFormat",
 			Ipv4Error::InvalidArrayLength => "Ipv4Error::InvalidArrayLength",
+			Ipv4Error::InvalidValue=>"Ipv4Error::InvalidValue"
 		};
 
 		write!(f, "{}", scr)
@@ -32,6 +34,7 @@ impl Display for Ipv4Error {
 
 #[cfg(test)]
 mod tests {
+	use std::fmt::format;
 	use crate::ipv4_error::Ipv4Error;
 
 	#[test]
@@ -44,6 +47,9 @@ mod tests {
 
 		let actual = format!("{:?}", Ipv4Error::InvalidArrayLength);
 		assert_eq!(actual, "Ipv4Error::InvalidArrayLength");
+		
+		let actual=format!("{:?}",Ipv4Error::InvalidValue);
+		assert_eq!(actual,"Ipv4Error::InvalidValue")
 	}
 
 	#[test]
@@ -57,5 +63,8 @@ mod tests {
 
 		let actual = format!("{:}", Ipv4Error::InvalidArrayLength);
 		assert_eq!(actual, "Ipv4Error::InvalidArrayLength");
+
+		let actual=format!("{:}",Ipv4Error::InvalidValue);
+		assert_eq!(actual,"Ipv4Error::InvalidValue")
 	}
 }
