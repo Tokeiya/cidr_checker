@@ -3,6 +3,7 @@ use std::fmt::{Debug, Display, Formatter};
 pub enum Ipv4Error {
 	IndexOutOfRange,
 	InvalidFormat,
+	InvalidArrayLength,
 }
 
 impl Ipv4Error {
@@ -10,6 +11,7 @@ impl Ipv4Error {
 		let scr = match self {
 			Ipv4Error::IndexOutOfRange => "Ipv4Error::IndexOutOfRange",
 			Ipv4Error::InvalidFormat => "Ipv4Error::InvalidFormat",
+			Ipv4Error::InvalidArrayLength => "Ipv4Error::InvalidArrayLength",
 		};
 
 		write!(f, "{}", scr)
@@ -39,6 +41,9 @@ mod tests {
 
 		let actual = format!("{:?}", Ipv4Error::InvalidFormat);
 		assert_eq!(actual, "Ipv4Error::InvalidFormat");
+
+		let actual = format!("{:?}", Ipv4Error::InvalidArrayLength);
+		assert_eq!(actual, "Ipv4Error::InvalidArrayLength");
 	}
 
 	#[test]
@@ -49,5 +54,8 @@ mod tests {
 
 		let actual = format!("{:}", Ipv4Error::InvalidFormat);
 		assert_eq!(actual, "Ipv4Error::InvalidFormat");
+
+		let actual = format!("{:}", Ipv4Error::InvalidArrayLength);
+		assert_eq!(actual, "Ipv4Error::InvalidArrayLength");
 	}
 }
