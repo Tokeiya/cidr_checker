@@ -35,7 +35,6 @@ impl Display for Ipv4Error {
 #[cfg(test)]
 mod tests {
 	use crate::ipv4_error::Ipv4Error;
-	use std::fmt::format;
 
 	#[test]
 	pub fn debug_test() {
@@ -53,7 +52,6 @@ mod tests {
 	}
 
 	#[test]
-
 	pub fn display_test() {
 		let actual = format!("{:}", Ipv4Error::IndexOutOfRange);
 		assert_eq!(actual, "IPv4Error::IndexOutOfRange");

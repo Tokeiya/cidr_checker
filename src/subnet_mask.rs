@@ -1,8 +1,9 @@
+use std::fmt::{Debug, Display, Formatter};
+
+use once_cell::sync::Lazy;
+
 use crate::ipv4::IPv4;
 use crate::subnet_mask_error::SubnetMaskError;
-use once_cell::sync::Lazy;
-use std::fmt::{Debug, Display, Formatter};
-use std::ops::Sub;
 
 static TABLE: Lazy<[IPv4; 32]> = Lazy::new(|| {
 	[
@@ -68,7 +69,7 @@ impl SubnetMask {
 
 	pub fn broadcast_address(&self, ip: &IPv4) -> IPv4 {
 		let mut addr = self.0.to_u32() & ip.to_u32();
-		addr |= (!self.0.to_u32());
+		addr |= !self.0.to_u32();
 		IPv4::from(addr)
 	}
 
@@ -109,10 +110,11 @@ impl Display for SubnetMask {
 
 #[cfg(test)]
 mod tests {
+	use once_cell::sync::Lazy;
+
 	use crate::ipv4::IPv4;
 	use crate::subnet_mask::SubnetMask;
 	use crate::subnet_mask_error::SubnetMaskError;
-	use once_cell::sync::Lazy;
 
 	static MASK: Lazy<[IPv4; 32]> = Lazy::new(|| {
 		[

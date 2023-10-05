@@ -1,6 +1,8 @@
-use crate::ipv4_error::Ipv4Error;
-use once_cell::sync::Lazy;
 use std::fmt::{Debug, Display, Formatter};
+
+use once_cell::sync::Lazy;
+
+use crate::ipv4_error::Ipv4Error;
 
 struct Factor(u32, u32);
 
