@@ -16,14 +16,29 @@ static OFFSET_TABLE: Lazy<[Factor; 4]> = Lazy::new(|| {
 pub struct IPv4(u32);
 
 impl IPv4 {
-	pub fn fragment(&self, index: usize) -> u8 {
-		todo!()
+	pub fn fragment(&self, index: usize) -> Result<u8, Ipv4Error> {
+		if index > 3 {
+			Err(Ipv4Error::IndexOutOfRange)
+		} else {
+			let Factor(offset, shift) = OFFSET_TABLE[index];
+			Ok(((self.0 & offset) >> shift) as u8)
+		}
+	}
+
+	fn format(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		for i in 0..4 {
+			write!(f, "{}", self.fragment(i).unwrap())?;
+			if i < 3 {
+				write!(f, ".")?;
+			}
+		}
+		Ok(())
 	}
 }
 
 impl From<u32> for IPv4 {
 	fn from(value: u32) -> Self {
-		todo!()
+		IPv4(value)
 	}
 }
 
@@ -31,7 +46,19 @@ impl TryFrom<&[u8]> for IPv4 {
 	type Error = Ipv4Error;
 
 	fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-		todo!()
+		if value.len() > 4 {
+			Err(Ipv4Error::InvalidArrayLength)
+		} else {
+			let mut result = 0u32;
+			for i in 0..value.len() {
+				let byte = value[i];
+				let Factor(_, shift) = OFFSET_TABLE[i];
+
+				result |= (byte as u32) << shift;
+			}
+
+			Ok(IPv4(result))
+		}
 	}
 }
 
@@ -45,13 +72,13 @@ impl TryFrom<&str> for IPv4 {
 
 impl Debug for IPv4 {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		todo!()
+		self.format(f)
 	}
 }
 
 impl Display for IPv4 {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		todo!()
+		self.format(f)
 	}
 }
 
@@ -62,11 +89,11 @@ mod tests {
 
 	fn assert(actual: IPv4, expected: &[u8; 4]) {
 		for i in 0..4usize {
-			assert_eq!(actual.fragment(i), expected[i])
+			assert_eq!(actual.fragment(i).unwrap(), expected[i])
 		}
 	}
 
-	fn assert_err(actual: Result<IPv4, Ipv4Error>, expected: Ipv4Error) {
+	fn assert_err<T>(actual: Result<T, Ipv4Error>, expected: Ipv4Error) {
 		fn to_ordinal(e: Ipv4Error) -> usize {
 			match e {
 				Ipv4Error::IndexOutOfRange => 1,
@@ -76,13 +103,22 @@ mod tests {
 			}
 		}
 
-		let err = actual.unwrap_err();
-		assert_eq!(to_ordinal(err), to_ordinal(expected))
+		if let Err(err) = actual {
+			assert_eq!(to_ordinal(err), to_ordinal(expected));
+		} else {
+			unreachable!()
+		}
 	}
 
 	#[test]
 	fn from_u32_test() {
-		let fixture = IPv4::from(0x66_0A_A8_C0_u32);
+		let fixture = IPv4::from(0xC0_A8_0A_66);
+
+		for i in 0..4 {
+			print!("{}.", fixture.fragment(i).unwrap());
+		}
+
+		println!();
 		assert(fixture, &[192u8, 168u8, 10u8, 102u8])
 	}
 
@@ -120,22 +156,25 @@ mod tests {
 
 	#[test]
 	fn debug_test() {
-		let actual = format!("{:?}", IPv4::from(0x66_0A_A8_C0_u32));
-		assert_eq!(format!("{:?}", actual), "192.168.10.102");
+		let actual = format!("{:?}", IPv4::from(0xC0_A8_0A_66));
+		println!("{:?}", actual);
+		assert_eq!(format!("{:?}", actual), "\"192.168.10.102\"");
 	}
 
 	#[test]
 	fn display_test() {
-		let actual = format!("{:?}", IPv4::from(0x66_0A_A8_C0_u32));
+		let actual = format!("{:?}", IPv4::from(0xC0_A8_0A_66));
 		assert_eq!(format!("{}", actual), "192.168.10.102");
 	}
 
 	#[test]
 	fn fragment_test() {
-		let fixture = IPv4::from(0x66_0A_A8_C0_u32);
-		assert_eq!(fixture.fragment(0), 192u8);
-		assert_eq!(fixture.fragment(1), 168u8);
-		assert_eq!(fixture.fragment(2), 10u8);
-		assert_eq!(fixture.fragment(3), 102u8);
+		let fixture = IPv4::from(0xC0_A8_0A_66);
+		assert_eq!(fixture.fragment(0).unwrap(), 192u8);
+		assert_eq!(fixture.fragment(1).unwrap(), 168u8);
+		assert_eq!(fixture.fragment(2).unwrap(), 10u8);
+		assert_eq!(fixture.fragment(3).unwrap(), 102u8);
+
+		assert_err(fixture.fragment(4), Ipv4Error::IndexOutOfRange);
 	}
 }

@@ -1,11 +1,10 @@
+use crate::ipv4::IPv4;
+
 mod ipv4;
 mod ipv4_error;
 
 fn main() {
-	let mut piv = 0xFFu32;
-
-	for i in 0..4u32 {
-		println!("{:x}", piv);
-		piv <<= 8;
-	}
+	let ip = IPv4::from(0xC0_A8_0A_66);
+	println!("{}", ip);
+	println!("{:?}", ip);
 }
