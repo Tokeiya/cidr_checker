@@ -13,6 +13,7 @@ static OFFSET_TABLE: Lazy<[Factor; 4]> = Lazy::new(|| {
 	]
 });
 
+#[derive(Eq, PartialEq, Copy, Clone)]
 pub struct IPv4(u32);
 
 impl IPv4 {
@@ -23,6 +24,10 @@ impl IPv4 {
 			let Factor(offset, shift) = OFFSET_TABLE[index];
 			Ok(((self.0 & offset) >> shift) as u8)
 		}
+	}
+
+	pub fn to_u32(&self) -> u32 {
+		self.0
 	}
 
 	fn format(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -176,14 +181,12 @@ mod tests {
 
 	#[test]
 	fn debug_test() {
-		let actual = format!("{:?}", IPv4::from(0xC0_A8_0A_66));
-		println!("{:?}", actual);
-		assert_eq!(format!("{:?}", actual), "\"192.168.10.102\"");
+		assert_eq!(format!("{:?}", IPv4::from(0xC0_A8_0A_66)), "192.168.10.102");
 	}
 
 	#[test]
 	fn display_test() {
-		let actual = format!("{:?}", IPv4::from(0xC0_A8_0A_66));
+		let actual = format!("{}", IPv4::from(0xC0_A8_0A_66));
 		assert_eq!(format!("{}", actual), "192.168.10.102");
 	}
 
@@ -196,5 +199,11 @@ mod tests {
 		assert_eq!(fixture.fragment(3).unwrap(), 102u8);
 
 		assert_err(fixture.fragment(4), Ipv4Error::IndexOutOfRange);
+	}
+
+	#[test]
+	fn to_u32_test() {
+		let fixture = IPv4::from(0xC0_A8_0A_66);
+		assert_eq!(fixture.to_u32(), fixture.0)
 	}
 }
