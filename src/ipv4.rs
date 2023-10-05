@@ -46,7 +46,7 @@ impl TryFrom<&[u8]> for IPv4 {
 	type Error = Ipv4Error;
 
 	fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-		if value.len() > 4 {
+		if value.len() != 4 {
 			Err(Ipv4Error::InvalidArrayLength)
 		} else {
 			let mut result = 0u32;
@@ -66,7 +66,27 @@ impl TryFrom<&str> for IPv4 {
 	type Error = Ipv4Error;
 
 	fn try_from(value: &str) -> Result<Self, Self::Error> {
-		todo!()
+		let mut cnt = 0;
+		let mut accum: u32 = 0;
+
+		for elem in value.split(".") {
+			if cnt >= 4 {
+				return Err(Ipv4Error::InvalidFormat);
+			}
+
+			let Factor(_, shift) = OFFSET_TABLE[cnt];
+
+			let tmp = elem.parse::<u8>().map_err(|_| Ipv4Error::InvalidValue)? as u32;
+			accum |= tmp << shift;
+
+			cnt += 1;
+		}
+
+		if cnt != 4 {
+			Err(Ipv4Error::InvalidFormat)
+		} else {
+			Ok(IPv4(accum))
+		}
 	}
 }
 
