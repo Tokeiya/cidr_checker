@@ -1,112 +1,51 @@
 use std::fmt::{Debug, Display, Formatter};
 
-use once_cell::sync::Lazy;
-
+use crate::cidr_error::CidrError;
 use crate::ipv4::IPv4;
-use crate::subnet_error::IPv4MaskError;
+use crate::ipv4_mask::IPv4Mask;
 
-static TABLE: Lazy<[IPv4; 32]> = Lazy::new(|| {
-	[
-		IPv4::from(0x80000000u32),
-		IPv4::from(0xc0000000u32),
-		IPv4::from(0xe0000000u32),
-		IPv4::from(0xf0000000u32),
-		IPv4::from(0xf8000000u32),
-		IPv4::from(0xfc000000u32),
-		IPv4::from(0xfe000000u32),
-		IPv4::from(0xff000000u32),
-		IPv4::from(0xff800000u32),
-		IPv4::from(0xffc00000u32),
-		IPv4::from(0xffe00000u32),
-		IPv4::from(0xfff00000u32),
-		IPv4::from(0xfff80000u32),
-		IPv4::from(0xfffc0000u32),
-		IPv4::from(0xfffe0000u32),
-		IPv4::from(0xffff0000u32),
-		IPv4::from(0xffff8000u32),
-		IPv4::from(0xffffc000u32),
-		IPv4::from(0xffffe000u32),
-		IPv4::from(0xfffff000u32),
-		IPv4::from(0xfffff800u32),
-		IPv4::from(0xfffffc00u32),
-		IPv4::from(0xfffffe00u32),
-		IPv4::from(0xffffff00u32),
-		IPv4::from(0xffffff80u32),
-		IPv4::from(0xffffffc0u32),
-		IPv4::from(0xffffffe0u32),
-		IPv4::from(0xfffffff0u32),
-		IPv4::from(0xfffffff8u32),
-		IPv4::from(0xfffffffcu32),
-		IPv4::from(0xfffffffeu32),
-		IPv4::from(0xffffffffu32),
-	]
-});
+#[derive(Eq, PartialEq)]
+pub struct NetworkRange(IPv4, IPv4Mask);
 
-#[derive(Eq, PartialEq, Copy, Clone)]
-pub struct Cidr(IPv4, u8);
-
-impl Cidr {
-	pub fn new(cidr: u8) -> Result<Self, IPv4MaskError> {
-		if cidr > 0 && cidr <= 32 {
-			Ok(Cidr(TABLE[(cidr - 1) as usize], cidr))
+impl NetworkRange {
+	pub fn new(address: IPv4, subnet: IPv4Mask) -> Result<NetworkRange, CidrError> {
+		let tmp = subnet.network_address(&address);
+		if tmp != address {
+			Err(CidrError::InvalidAddressOrMask)
 		} else {
-			Err(IPv4MaskError::CidrOutOfRange)
+			Ok(NetworkRange(address, subnet))
 		}
 	}
 
-	pub fn cidr(&self) -> u8 {
-		self.1
+	pub fn contains(&self, address: &IPv4) -> bool {
+		let tmp = self.1.network_address(address);
+		tmp == self.0
 	}
 
-	pub fn mask_address(&self) -> &IPv4 {
+	pub fn address(&self) -> &IPv4 {
 		&self.0
 	}
 
-	pub fn network_address(&self, ip: &IPv4) -> IPv4 {
-		let addr = self.0.to_u32() & ip.to_u32();
-		IPv4::from(addr)
+	pub fn subnet_mask(&self) -> &IPv4Mask {
+		&self.1
 	}
 
-	pub fn broadcast_address(&self, ip: &IPv4) -> IPv4 {
-		let mut addr = self.0.to_u32() & ip.to_u32();
-		addr |= !self.0.to_u32();
-		IPv4::from(addr)
-	}
-
-	pub fn range(&self) -> (IPv4, IPv4) {
-		todo!()
+	pub fn broadcast_address(&self) -> IPv4 {
+		self.1.broadcast_address(&self.0)
 	}
 
 	fn format(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		write!(f, "/{}", self.1)
+		write!(f, "{}{}", self.0, self.1)
 	}
 }
 
-impl TryFrom<&IPv4> for Cidr {
-	type Error = IPv4MaskError;
-
-	fn try_from(value: &IPv4) -> Result<Self, Self::Error> {
-		let mut cidr = 1u8;
-
-		for expected in TABLE.iter() {
-			if value == expected {
-				return Ok(Cidr::new(cidr).unwrap());
-			}
-
-			cidr += 1;
-		}
-
-		Err(IPv4MaskError::InvalidSubnetMask)
-	}
-}
-
-impl Debug for Cidr {
+impl Debug for NetworkRange {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		self.format(f)
 	}
 }
 
-impl Display for Cidr {
+impl Display for NetworkRange {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		self.format(f)
 	}
@@ -114,60 +53,20 @@ impl Display for Cidr {
 
 #[cfg(test)]
 mod tests {
-	use once_cell::sync::Lazy;
-
-	use crate::cidr::Cidr;
+	use crate::cidr_error::CidrError;
 	use crate::ipv4::IPv4;
-	use crate::subnet_error::IPv4MaskError;
+	use crate::ipv4_mask::IPv4Mask;
+	use crate::network_range::NetworkRange;
 
-	static MASK: Lazy<[IPv4; 32]> = Lazy::new(|| {
-		[
-			IPv4::try_from("128.0.0.0").unwrap(),
-			IPv4::try_from("192.0.0.0").unwrap(),
-			IPv4::try_from("224.0.0.0").unwrap(),
-			IPv4::try_from("240.0.0.0").unwrap(),
-			IPv4::try_from("248.0.0.0").unwrap(),
-			IPv4::try_from("252.0.0.0").unwrap(),
-			IPv4::try_from("254.0.0.0").unwrap(),
-			IPv4::try_from("255.0.0.0").unwrap(),
-			IPv4::try_from("255.128.0.0").unwrap(),
-			IPv4::try_from("255.192.0.0").unwrap(),
-			IPv4::try_from("255.224.0.0").unwrap(),
-			IPv4::try_from("255.240.0.0").unwrap(),
-			IPv4::try_from("255.248.0.0").unwrap(),
-			IPv4::try_from("255.252.0.0").unwrap(),
-			IPv4::try_from("255.254.0.0").unwrap(),
-			IPv4::try_from("255.255.0.0").unwrap(),
-			IPv4::try_from("255.255.128.0").unwrap(),
-			IPv4::try_from("255.255.192.0").unwrap(),
-			IPv4::try_from("255.255.224.0").unwrap(),
-			IPv4::try_from("255.255.240.0").unwrap(),
-			IPv4::try_from("255.255.248.0").unwrap(),
-			IPv4::try_from("255.255.252.0").unwrap(),
-			IPv4::try_from("255.255.254.0").unwrap(),
-			IPv4::try_from("255.255.255.0").unwrap(),
-			IPv4::try_from("255.255.255.128").unwrap(),
-			IPv4::try_from("255.255.255.192").unwrap(),
-			IPv4::try_from("255.255.255.224").unwrap(),
-			IPv4::try_from("255.255.255.240").unwrap(),
-			IPv4::try_from("255.255.255.248").unwrap(),
-			IPv4::try_from("255.255.255.252").unwrap(),
-			IPv4::try_from("255.255.255.254").unwrap(),
-			IPv4::try_from("255.255.255.255").unwrap(),
-		]
-	});
-
-	fn assert_error<T>(actual: Result<T, IPv4MaskError>, expected: IPv4MaskError) {
-		fn to_ordinal(e: IPv4MaskError) -> usize {
+	fn assert_error<T>(result: Result<T, CidrError>, expected: CidrError) {
+		fn to_ordinal(e: CidrError) -> usize {
 			match e {
-				IPv4MaskError::CidrOutOfRange => 1,
-				IPv4MaskError::FormatError => 2,
-				IPv4MaskError::InvalidSubnetMask => 3,
+				CidrError::InvalidAddressOrMask => 1,
 			}
 		}
 
-		if let Err(err) = actual {
-			assert_eq!(to_ordinal(err), to_ordinal(expected))
+		if let Err(e) = result {
+			assert_eq!(to_ordinal(e), to_ordinal(expected));
 		} else {
 			unreachable!()
 		}
@@ -175,97 +74,79 @@ mod tests {
 
 	#[test]
 	fn new_test() {
-		for i in 1..=32 {
-			let actual = Cidr::new(i);
-			assert!(actual.is_ok());
-			assert_eq!(actual.unwrap().cidr(), i);
-		}
+		let fixture = NetworkRange::new(
+			IPv4::try_from("192.168.10.0").unwrap(),
+			IPv4Mask::new(24).unwrap(),
+		)
+		.unwrap();
+		assert_eq!(fixture.0, IPv4::try_from("192.168.10.0").unwrap());
+		assert_eq!(fixture.1, IPv4Mask::new(24).unwrap());
 
-		assert_error(Cidr::new(33), IPv4MaskError::CidrOutOfRange);
-		assert_error(Cidr::new(0), IPv4MaskError::CidrOutOfRange);
-	}
+		let fixture = NetworkRange::new(
+			IPv4::try_from("192.168.10.1").unwrap(),
+			IPv4Mask::new(24).unwrap(),
+		);
 
-	#[test]
-	fn from_subnet_mask_test() {
-		let mut cidr = 1;
-
-		for addr in MASK.iter() {
-			let fixture = Cidr::try_from(addr).unwrap();
-
-			assert_eq!(cidr, fixture.cidr());
-			cidr += 1;
-		}
-
-		let fixture = Cidr::try_from(&IPv4::try_from("128.1.0.1").unwrap());
-		assert_error(fixture, IPv4MaskError::InvalidSubnetMask);
+		assert_error(fixture, CidrError::InvalidAddressOrMask);
 	}
 
 	#[test]
 	fn debug_test() {
-		for i in 1u8..=32 {
-			let fixture = Cidr::new(i).unwrap();
-			assert_eq!(format!("{:?}", fixture), format!("/{}", i))
-		}
+		let fixture = NetworkRange::new(
+			IPv4::try_from("192.168.10.0").unwrap(),
+			IPv4Mask::new(24).unwrap(),
+		)
+		.unwrap();
+
+		assert_eq!(format!("{:?}", fixture), "192.168.10.0/24")
 	}
 
 	#[test]
 	fn display_test() {
-		for i in 1u8..=32 {
-			let fixture = Cidr::new(i).unwrap();
-			assert_eq!(format!("{:}", fixture), format!("/{}", i))
-		}
+		let fixture = NetworkRange::new(
+			IPv4::try_from("192.168.10.0").unwrap(),
+			IPv4Mask::new(24).unwrap(),
+		)
+		.unwrap();
+
+		assert_eq!(format!("{}", fixture), "192.168.10.0/24")
+	}
+
+	#[test]
+	fn address_test() {
+		let fixture = NetworkRange::new(
+			IPv4::try_from("192.168.10.0").unwrap(),
+			IPv4Mask::new(24).unwrap(),
+		)
+		.unwrap();
+
+		assert_eq!(fixture.address(), &fixture.0);
 	}
 
 	#[test]
 	fn subnet_mask_test() {
-		for i in 1u8..=32 {
-			let fixture = Cidr::new(i).unwrap();
-			let expected = &MASK[(i - 1) as usize];
+		let fixture = NetworkRange::new(
+			IPv4::try_from("192.168.10.0").unwrap(),
+			IPv4Mask::new(24).unwrap(),
+		)
+		.unwrap();
 
-			assert_eq!(fixture.mask_address(), expected)
-		}
+		assert_eq!(fixture.subnet_mask(), &fixture.1);
 	}
 
 	#[test]
-	fn network_address_test() {
-		let mask = Cidr::try_from(&IPv4::try_from("255.255.255.0").unwrap()).unwrap();
-		let addr = IPv4::try_from("192.168.10.102").unwrap();
+	fn contain_test() {
+		let fixture = NetworkRange::new(
+			IPv4::try_from("192.168.10.0").unwrap(),
+			IPv4Mask::new(24).unwrap(),
+		)
+		.unwrap();
 
-		let actual = mask.network_address(&addr);
+		let addr = IPv4::try_from("192.168.10.120").unwrap();
 
-		assert_eq!(actual, IPv4::try_from("192.168.10.0").unwrap())
-	}
+		assert!(fixture.contains(&addr));
 
-	#[test]
-	fn broadcast_address_test() {
-		let mask = Cidr::try_from(&IPv4::try_from("255.255.255.0").unwrap()).unwrap();
-		let addr = IPv4::try_from("192.168.10.102").unwrap();
-
-		let actual = mask.broadcast_address(&addr);
-
-		assert_eq!(actual, IPv4::try_from("192.168.10.255").unwrap())
-	}
-
-	#[test]
-	fn range_test() {
-		todo!();
-	}
-
-	#[test]
-	fn eq_test() {
-		let a = Cidr::new(1).unwrap();
-		let b = Cidr::new(1).unwrap();
-
-		assert!(a == b);
-		assert!(!(a != b));
-	}
-
-	#[test]
-	fn ne_test() {
-		let a = Cidr::new(1).unwrap();
-		let b = Cidr::new(2).unwrap();
-
-		assert!(!(a == b));
-		assert!(a != b);
+		let addr = IPv4::try_from("192.168.11.120").unwrap();
+		assert!(!fixture.contains(&addr));
 	}
 }
