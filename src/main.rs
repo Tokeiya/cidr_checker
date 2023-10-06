@@ -19,6 +19,7 @@ fn main() {
 	let verify_target = IPv4::try_from("192.168.121.101").unwrap();
 
 	println!("NetworkRange:{:?}", network);
+	println!("NetworkAddress:{}", network.address());
 	println!("SubnetMask:{}", network.subnet_mask().subnet_mask());
 	println!("VerifyTarget:{}", verify_target);
 	println!("IsContain:{}", network.contains(&verify_target));
