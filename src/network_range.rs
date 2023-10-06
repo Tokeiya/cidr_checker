@@ -1,14 +1,14 @@
 use std::fmt::{Debug, Display, Formatter};
 
 use crate::ipv4::IPv4;
+use crate::ipv4_mask::IPv4Mask;
 use crate::network_range_error::NetworkRangeError;
-use crate::subnet::Subnet;
 
 #[derive(Eq, PartialEq)]
-pub struct NetworkRange(IPv4, Subnet);
+pub struct NetworkRange(IPv4, IPv4Mask);
 
 impl NetworkRange {
-	pub fn new(address: IPv4, subnet: Subnet) -> Result<NetworkRange, NetworkRangeError> {
+	pub fn new(address: IPv4, subnet: IPv4Mask) -> Result<NetworkRange, NetworkRangeError> {
 		let tmp = subnet.network_address(&address);
 		if tmp != address {
 			Err(NetworkRangeError::InvalidAddressOrMask)
@@ -26,7 +26,7 @@ impl NetworkRange {
 		&self.0
 	}
 
-	pub fn subnet_mask(&self) -> &Subnet {
+	pub fn subnet_mask(&self) -> &IPv4Mask {
 		&self.1
 	}
 
@@ -54,9 +54,9 @@ impl Display for NetworkRange {
 #[cfg(test)]
 mod tests {
 	use crate::ipv4::IPv4;
+	use crate::ipv4_mask::IPv4Mask;
 	use crate::network_range::NetworkRange;
 	use crate::network_range_error::NetworkRangeError;
-	use crate::subnet::Subnet;
 
 	fn assert_error<T>(result: Result<T, NetworkRangeError>, expected: NetworkRangeError) {
 		fn to_ordinal(e: NetworkRangeError) -> usize {
@@ -76,15 +76,15 @@ mod tests {
 	fn new_test() {
 		let fixture = NetworkRange::new(
 			IPv4::try_from("192.168.10.0").unwrap(),
-			Subnet::new(24).unwrap(),
+			IPv4Mask::new(24).unwrap(),
 		)
-		  .unwrap();
+		.unwrap();
 		assert_eq!(fixture.0, IPv4::try_from("192.168.10.0").unwrap());
-		assert_eq!(fixture.1, Subnet::new(24).unwrap());
+		assert_eq!(fixture.1, IPv4Mask::new(24).unwrap());
 
 		let fixture = NetworkRange::new(
 			IPv4::try_from("192.168.10.1").unwrap(),
-			Subnet::new(24).unwrap(),
+			IPv4Mask::new(24).unwrap(),
 		);
 
 		assert_error(fixture, NetworkRangeError::InvalidAddressOrMask);
@@ -94,9 +94,9 @@ mod tests {
 	fn debug_test() {
 		let fixture = NetworkRange::new(
 			IPv4::try_from("192.168.10.0").unwrap(),
-			Subnet::new(24).unwrap(),
+			IPv4Mask::new(24).unwrap(),
 		)
-		  .unwrap();
+		.unwrap();
 
 		assert_eq!(format!("{:?}", fixture), "192.168.10.0/24")
 	}
@@ -105,9 +105,9 @@ mod tests {
 	fn display_test() {
 		let fixture = NetworkRange::new(
 			IPv4::try_from("192.168.10.0").unwrap(),
-			Subnet::new(24).unwrap(),
+			IPv4Mask::new(24).unwrap(),
 		)
-		  .unwrap();
+		.unwrap();
 
 		assert_eq!(format!("{}", fixture), "192.168.10.0/24")
 	}
@@ -116,9 +116,9 @@ mod tests {
 	fn address_test() {
 		let fixture = NetworkRange::new(
 			IPv4::try_from("192.168.10.0").unwrap(),
-			Subnet::new(24).unwrap(),
+			IPv4Mask::new(24).unwrap(),
 		)
-		  .unwrap();
+		.unwrap();
 
 		assert_eq!(fixture.address(), &fixture.0);
 	}
@@ -127,9 +127,9 @@ mod tests {
 	fn subnet_mask_test() {
 		let fixture = NetworkRange::new(
 			IPv4::try_from("192.168.10.0").unwrap(),
-			Subnet::new(24).unwrap(),
+			IPv4Mask::new(24).unwrap(),
 		)
-		  .unwrap();
+		.unwrap();
 
 		assert_eq!(fixture.subnet_mask(), &fixture.1);
 	}
@@ -138,9 +138,9 @@ mod tests {
 	fn contain_test() {
 		let fixture = NetworkRange::new(
 			IPv4::try_from("192.168.10.0").unwrap(),
-			Subnet::new(24).unwrap(),
+			IPv4Mask::new(24).unwrap(),
 		)
-		  .unwrap();
+		.unwrap();
 
 		let addr = IPv4::try_from("192.168.10.120").unwrap();
 

@@ -3,7 +3,7 @@ use std::fmt::{Debug, Display, Formatter};
 use once_cell::sync::Lazy;
 
 use crate::ipv4::IPv4;
-use crate::subnet_error::SubnetError;
+use crate::subnet_error::IPv4MaskError;
 
 static TABLE: Lazy<[IPv4; 32]> = Lazy::new(|| {
 	[
@@ -43,14 +43,14 @@ static TABLE: Lazy<[IPv4; 32]> = Lazy::new(|| {
 });
 
 #[derive(Eq, PartialEq, Copy, Clone)]
-pub struct Subnet(IPv4, u8);
+pub struct IPv4Mask(IPv4, u8);
 
-impl Subnet {
-	pub fn new(cidr: u8) -> Result<Self, SubnetError> {
+impl IPv4Mask {
+	pub fn new(cidr: u8) -> Result<Self, IPv4MaskError> {
 		if cidr > 0 && cidr <= 32 {
-			Ok(Subnet(TABLE[(cidr - 1) as usize], cidr))
+			Ok(IPv4Mask(TABLE[(cidr - 1) as usize], cidr))
 		} else {
-			Err(SubnetError::CidrOutOfRange)
+			Err(IPv4MaskError::CidrOutOfRange)
 		}
 	}
 
@@ -78,31 +78,31 @@ impl Subnet {
 	}
 }
 
-impl TryFrom<&IPv4> for Subnet {
-	type Error = SubnetError;
+impl TryFrom<&IPv4> for IPv4Mask {
+	type Error = IPv4MaskError;
 
 	fn try_from(value: &IPv4) -> Result<Self, Self::Error> {
 		let mut cidr = 1u8;
 
 		for expected in TABLE.iter() {
 			if value == expected {
-				return Ok(Subnet::new(cidr).unwrap());
+				return Ok(IPv4Mask::new(cidr).unwrap());
 			}
 
 			cidr += 1;
 		}
 
-		Err(SubnetError::InvalidSubnetMask)
+		Err(IPv4MaskError::InvalidSubnetMask)
 	}
 }
 
-impl Debug for Subnet {
+impl Debug for IPv4Mask {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		self.format(f)
 	}
 }
 
-impl Display for Subnet {
+impl Display for IPv4Mask {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		self.format(f)
 	}
@@ -113,8 +113,8 @@ mod tests {
 	use once_cell::sync::Lazy;
 
 	use crate::ipv4::IPv4;
-	use crate::subnet::Subnet;
-	use crate::subnet_error::SubnetError;
+	use crate::ipv4_mask::IPv4Mask;
+	use crate::subnet_error::IPv4MaskError;
 
 	static MASK: Lazy<[IPv4; 32]> = Lazy::new(|| {
 		[
@@ -153,12 +153,12 @@ mod tests {
 		]
 	});
 
-	fn assert_error<T>(actual: Result<T, SubnetError>, expected: SubnetError) {
-		fn to_ordinal(e: SubnetError) -> usize {
+	fn assert_error<T>(actual: Result<T, IPv4MaskError>, expected: IPv4MaskError) {
+		fn to_ordinal(e: IPv4MaskError) -> usize {
 			match e {
-				SubnetError::CidrOutOfRange => 1,
-				SubnetError::FormatError => 2,
-				SubnetError::InvalidSubnetMask => 3,
+				IPv4MaskError::CidrOutOfRange => 1,
+				IPv4MaskError::FormatError => 2,
+				IPv4MaskError::InvalidSubnetMask => 3,
 			}
 		}
 
@@ -172,13 +172,13 @@ mod tests {
 	#[test]
 	fn new_test() {
 		for i in 1..=32 {
-			let actual = Subnet::new(i);
+			let actual = IPv4Mask::new(i);
 			assert!(actual.is_ok());
 			assert_eq!(actual.unwrap().cidr(), i);
 		}
 
-		assert_error(Subnet::new(33), SubnetError::CidrOutOfRange);
-		assert_error(Subnet::new(0), SubnetError::CidrOutOfRange);
+		assert_error(IPv4Mask::new(33), IPv4MaskError::CidrOutOfRange);
+		assert_error(IPv4Mask::new(0), IPv4MaskError::CidrOutOfRange);
 	}
 
 	#[test]
@@ -186,20 +186,20 @@ mod tests {
 		let mut cidr = 1;
 
 		for addr in MASK.iter() {
-			let fixture = Subnet::try_from(addr).unwrap();
+			let fixture = IPv4Mask::try_from(addr).unwrap();
 
 			assert_eq!(cidr, fixture.cidr());
 			cidr += 1;
 		}
 
-		let fixture = Subnet::try_from(&IPv4::try_from("128.1.0.1").unwrap());
-		assert_error(fixture, SubnetError::InvalidSubnetMask);
+		let fixture = IPv4Mask::try_from(&IPv4::try_from("128.1.0.1").unwrap());
+		assert_error(fixture, IPv4MaskError::InvalidSubnetMask);
 	}
 
 	#[test]
 	fn debug_test() {
 		for i in 1u8..=32 {
-			let fixture = Subnet::new(i).unwrap();
+			let fixture = IPv4Mask::new(i).unwrap();
 			assert_eq!(format!("{:?}", fixture), format!("/{}", i))
 		}
 	}
@@ -207,7 +207,7 @@ mod tests {
 	#[test]
 	fn display_test() {
 		for i in 1u8..=32 {
-			let fixture = Subnet::new(i).unwrap();
+			let fixture = IPv4Mask::new(i).unwrap();
 			assert_eq!(format!("{:}", fixture), format!("/{}", i))
 		}
 	}
@@ -215,7 +215,7 @@ mod tests {
 	#[test]
 	fn subnet_mask_test() {
 		for i in 1u8..=32 {
-			let fixture = Subnet::new(i).unwrap();
+			let fixture = IPv4Mask::new(i).unwrap();
 			let expected = &MASK[(i - 1) as usize];
 
 			assert_eq!(fixture.subnet_mask(), expected)
@@ -224,7 +224,7 @@ mod tests {
 
 	#[test]
 	fn network_address_test() {
-		let mask = Subnet::try_from(&IPv4::try_from("255.255.255.0").unwrap()).unwrap();
+		let mask = IPv4Mask::try_from(&IPv4::try_from("255.255.255.0").unwrap()).unwrap();
 		let addr = IPv4::try_from("192.168.10.102").unwrap();
 
 		let actual = mask.network_address(&addr);
@@ -234,7 +234,7 @@ mod tests {
 
 	#[test]
 	fn broadcast_address_test() {
-		let mask = Subnet::try_from(&IPv4::try_from("255.255.255.0").unwrap()).unwrap();
+		let mask = IPv4Mask::try_from(&IPv4::try_from("255.255.255.0").unwrap()).unwrap();
 		let addr = IPv4::try_from("192.168.10.102").unwrap();
 
 		let actual = mask.broadcast_address(&addr);
@@ -244,8 +244,8 @@ mod tests {
 
 	#[test]
 	fn eq_test() {
-		let a = Subnet::new(1).unwrap();
-		let b = Subnet::new(1).unwrap();
+		let a = IPv4Mask::new(1).unwrap();
+		let b = IPv4Mask::new(1).unwrap();
 
 		assert!(a == b);
 		assert!(!(a != b));
@@ -253,8 +253,8 @@ mod tests {
 
 	#[test]
 	fn ne_test() {
-		let a = Subnet::new(1).unwrap();
-		let b = Subnet::new(2).unwrap();
+		let a = IPv4Mask::new(1).unwrap();
+		let b = IPv4Mask::new(2).unwrap();
 
 		assert!(!(a == b));
 		assert!(a != b);
