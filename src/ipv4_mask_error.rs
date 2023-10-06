@@ -34,7 +34,7 @@ impl Display for IPv4MaskError {
 
 #[cfg(test)]
 mod tests {
-	use crate::subnet_error::IPv4MaskError;
+	use crate::ipv4_mask_error::IPv4MaskError;
 
 	#[test]
 	fn debug_test() {

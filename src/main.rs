@@ -1,18 +1,18 @@
 use crate::cidr::Cidr;
 use crate::ipv4::IPv4;
-use crate::network_range::NetworkRange;
+use crate::ipv4_mask::IPv4Mask;
 
 mod cidr;
 mod cidr_error;
 mod ipv4;
 mod ipv4_error;
-mod network_range;
-mod subnet_error;
+mod ipv4_mask;
+mod ipv4_mask_error;
 
 fn main() {
-	let network = NetworkRange::new(
+	let network = Cidr::new(
 		IPv4::try_from("192.168.112.0").unwrap(),
-		Cidr::new(20).unwrap(),
+		IPv4Mask::new(20).unwrap(),
 	)
 	.unwrap();
 
