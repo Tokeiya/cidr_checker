@@ -1,26 +1,26 @@
 use std::fmt::{Debug, Display, Formatter};
 
-pub enum NetworkRangeError {
+pub enum CidrError {
 	InvalidAddressOrMask,
 }
 
-impl NetworkRangeError {
+impl CidrError {
 	fn format(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		let scr = match self {
-			NetworkRangeError::InvalidAddressOrMask => "NetworkRangeError::InvalidAddressOrMask",
+			CidrError::InvalidAddressOrMask => "CidrError::InvalidAddressOrMask",
 		};
 
 		write!(f, "{}", scr)
 	}
 }
 
-impl Debug for NetworkRangeError {
+impl Debug for CidrError {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		self.format(f)
 	}
 }
 
-impl Display for NetworkRangeError {
+impl Display for CidrError {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		self.format(f)
 	}
@@ -28,19 +28,19 @@ impl Display for NetworkRangeError {
 
 #[cfg(test)]
 mod tests {
-	use crate::network_range_error::NetworkRangeError;
+	use crate::cidr_error::CidrError;
 
 	#[test]
 	fn debug_test() {
-		let fixture = NetworkRangeError::InvalidAddressOrMask;
+		let fixture = CidrError::InvalidAddressOrMask;
 		let actual = format!("{:?}", fixture);
-		assert_eq!(actual, "NetworkRangeError::InvalidAddressOrMask");
+		assert_eq!(actual, "CidrError::InvalidAddressOrMask");
 	}
 
 	#[test]
 	fn display_test() {
-		let fixture = NetworkRangeError::InvalidAddressOrMask;
+		let fixture = CidrError::InvalidAddressOrMask;
 		let actual = format!("{:}", fixture);
-		assert_eq!(actual, "NetworkRangeError::InvalidAddressOrMask");
+		assert_eq!(actual, "CidrError::InvalidAddressOrMask");
 	}
 }

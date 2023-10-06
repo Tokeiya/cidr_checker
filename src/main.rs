@@ -1,18 +1,18 @@
+use crate::cidr::Cidr;
 use crate::ipv4::IPv4;
-use crate::ipv4_mask::IPv4Mask;
 use crate::network_range::NetworkRange;
 
+mod cidr;
+mod cidr_error;
 mod ipv4;
 mod ipv4_error;
-mod ipv4_mask;
 mod network_range;
-mod network_range_error;
 mod subnet_error;
 
 fn main() {
 	let network = NetworkRange::new(
 		IPv4::try_from("192.168.112.0").unwrap(),
-		IPv4Mask::new(20).unwrap(),
+		Cidr::new(20).unwrap(),
 	)
 	.unwrap();
 
@@ -20,7 +20,7 @@ fn main() {
 
 	println!("NetworkRange:{:?}", network);
 	println!("NetworkAddress:{}", network.address());
-	println!("SubnetMask:{}", network.subnet_mask().subnet_mask());
+	println!("SubnetMask:{}", network.subnet_mask().mask_address());
 	println!("VerifyTarget:{}", verify_target);
 	println!("IsContain:{}", network.contains(&verify_target));
 }

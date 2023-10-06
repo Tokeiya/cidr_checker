@@ -1,17 +1,17 @@
 use std::fmt::{Debug, Display, Formatter};
 
+use crate::cidr::Cidr;
+use crate::cidr_error::CidrError;
 use crate::ipv4::IPv4;
-use crate::ipv4_mask::IPv4Mask;
-use crate::network_range_error::NetworkRangeError;
 
 #[derive(Eq, PartialEq)]
-pub struct NetworkRange(IPv4, IPv4Mask);
+pub struct NetworkRange(IPv4, Cidr);
 
 impl NetworkRange {
-	pub fn new(address: IPv4, subnet: IPv4Mask) -> Result<NetworkRange, NetworkRangeError> {
+	pub fn new(address: IPv4, subnet: Cidr) -> Result<NetworkRange, CidrError> {
 		let tmp = subnet.network_address(&address);
 		if tmp != address {
-			Err(NetworkRangeError::InvalidAddressOrMask)
+			Err(CidrError::InvalidAddressOrMask)
 		} else {
 			Ok(NetworkRange(address, subnet))
 		}
@@ -26,7 +26,7 @@ impl NetworkRange {
 		&self.0
 	}
 
-	pub fn subnet_mask(&self) -> &IPv4Mask {
+	pub fn subnet_mask(&self) -> &Cidr {
 		&self.1
 	}
 
@@ -53,15 +53,15 @@ impl Display for NetworkRange {
 
 #[cfg(test)]
 mod tests {
+	use crate::cidr::Cidr;
+	use crate::cidr_error::CidrError;
 	use crate::ipv4::IPv4;
-	use crate::ipv4_mask::IPv4Mask;
 	use crate::network_range::NetworkRange;
-	use crate::network_range_error::NetworkRangeError;
 
-	fn assert_error<T>(result: Result<T, NetworkRangeError>, expected: NetworkRangeError) {
-		fn to_ordinal(e: NetworkRangeError) -> usize {
+	fn assert_error<T>(result: Result<T, CidrError>, expected: CidrError) {
+		fn to_ordinal(e: CidrError) -> usize {
 			match e {
-				NetworkRangeError::InvalidAddressOrMask => 1,
+				CidrError::InvalidAddressOrMask => 1,
 			}
 		}
 
@@ -76,25 +76,25 @@ mod tests {
 	fn new_test() {
 		let fixture = NetworkRange::new(
 			IPv4::try_from("192.168.10.0").unwrap(),
-			IPv4Mask::new(24).unwrap(),
+			Cidr::new(24).unwrap(),
 		)
 		.unwrap();
 		assert_eq!(fixture.0, IPv4::try_from("192.168.10.0").unwrap());
-		assert_eq!(fixture.1, IPv4Mask::new(24).unwrap());
+		assert_eq!(fixture.1, Cidr::new(24).unwrap());
 
 		let fixture = NetworkRange::new(
 			IPv4::try_from("192.168.10.1").unwrap(),
-			IPv4Mask::new(24).unwrap(),
+			Cidr::new(24).unwrap(),
 		);
 
-		assert_error(fixture, NetworkRangeError::InvalidAddressOrMask);
+		assert_error(fixture, CidrError::InvalidAddressOrMask);
 	}
 
 	#[test]
 	fn debug_test() {
 		let fixture = NetworkRange::new(
 			IPv4::try_from("192.168.10.0").unwrap(),
-			IPv4Mask::new(24).unwrap(),
+			Cidr::new(24).unwrap(),
 		)
 		.unwrap();
 
@@ -105,7 +105,7 @@ mod tests {
 	fn display_test() {
 		let fixture = NetworkRange::new(
 			IPv4::try_from("192.168.10.0").unwrap(),
-			IPv4Mask::new(24).unwrap(),
+			Cidr::new(24).unwrap(),
 		)
 		.unwrap();
 
@@ -116,7 +116,7 @@ mod tests {
 	fn address_test() {
 		let fixture = NetworkRange::new(
 			IPv4::try_from("192.168.10.0").unwrap(),
-			IPv4Mask::new(24).unwrap(),
+			Cidr::new(24).unwrap(),
 		)
 		.unwrap();
 
@@ -127,7 +127,7 @@ mod tests {
 	fn subnet_mask_test() {
 		let fixture = NetworkRange::new(
 			IPv4::try_from("192.168.10.0").unwrap(),
-			IPv4Mask::new(24).unwrap(),
+			Cidr::new(24).unwrap(),
 		)
 		.unwrap();
 
@@ -138,7 +138,7 @@ mod tests {
 	fn contain_test() {
 		let fixture = NetworkRange::new(
 			IPv4::try_from("192.168.10.0").unwrap(),
-			IPv4Mask::new(24).unwrap(),
+			Cidr::new(24).unwrap(),
 		)
 		.unwrap();
 
