@@ -1,13 +1,14 @@
 use std::fmt::{Debug, Display, Formatter};
 
 pub enum NetworkAddressError {
-	InvalidAddress,
+	InvalidAddressOrMask,
+	
 }
 
 impl NetworkAddressError {
 	fn format(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		let scr = match self {
-			NetworkAddressError::InvalidAddress => "NetworkAddressError::InvalidAddress",
+			NetworkAddressError::InvalidAddressOrMask => "NetworkAddressError::InvalidAddressOrMask",
 		};
 
 		write!(f, "{}", scr)
@@ -32,15 +33,15 @@ mod tests {
 
 	#[test]
 	fn debug_test() {
-		let fixture = NetworkAddressError::InvalidAddress;
+		let fixture = NetworkAddressError::InvalidAddressOrMask;
 		let actual = format!("{:?}", fixture);
-		assert_eq!(actual, "NetworkAddressError::InvalidAddress");
+		assert_eq!(actual, "NetworkAddressError::InvalidAddressOrMask");
 	}
 
 	#[test]
 	fn display_test() {
-		let fixture = NetworkAddressError::InvalidAddress;
+		let fixture = NetworkAddressError::InvalidAddressOrMask;
 		let actual = format!("{:}", fixture);
-		assert_eq!(actual, "NetworkAddressError::InvalidAddress");
+		assert_eq!(actual, "NetworkAddressError::InvalidAddressOrMask");
 	}
 }

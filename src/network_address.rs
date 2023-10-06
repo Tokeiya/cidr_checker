@@ -8,39 +8,45 @@ pub struct NetworkAddress(IPv4, SubnetMask);
 
 impl NetworkAddress {
 	pub fn new(address: IPv4, mask: SubnetMask) -> Result<NetworkAddress, NetworkAddressError> {
-		todo!()
+		let tmp = mask.network_address(&address);
+		if tmp != address {
+			Err(NetworkAddressError::InvalidAddressOrMask)
+		} else {
+			Ok(NetworkAddress(address, mask))
+		}
 	}
 
 	pub fn contains(&self, address: &IPv4) -> bool {
-		todo!()
+		let tmp = self.1.network_address(address);
+		tmp == self.0
 	}
 
 	pub fn address(&self) -> &IPv4 {
-		todo!()
+		&self.0
 	}
 
 	pub fn subnet_mask(&self) -> &SubnetMask {
-		todo!()
+		&self.1
 	}
 
 	pub fn broadcast_address(&self) -> IPv4 {
-		todo!()
+		self.1.broadcast_address(&self.0)
 	}
 
 	fn format(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		todo!()
+		write!(f, "{}{}", self.0, self.1)
 	}
 }
 
 impl Debug for NetworkAddress {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		todo!()
+		self.format(f)
 	}
 }
 
 impl Display for NetworkAddress {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		todo!()
+		self.format(f)
 	}
 }
 
@@ -54,7 +60,7 @@ mod tests {
 	fn assert_error<T>(result: Result<T, NetworkAddressError>, expected: NetworkAddressError) {
 		fn to_ordinal(e: NetworkAddressError) -> usize {
 			match e {
-				NetworkAddressError::InvalidAddress => 1,
+				NetworkAddressError::InvalidAddressOrMask => 1,
 			}
 		}
 
@@ -79,7 +85,7 @@ mod tests {
 			SubnetMask::new(24).unwrap(),
 		);
 
-		assert_error(fixture, NetworkAddressError::InvalidAddress);
+		assert_error(fixture, NetworkAddressError::InvalidAddressOrMask);
 	}
 
 	#[test]
@@ -134,11 +140,11 @@ mod tests {
 		)
 		.unwrap();
 
-		let addr = IPv4::try_from("192.168.19.120").unwrap();
+		let addr = IPv4::try_from("192.168.10.120").unwrap();
 
 		assert!(fixture.contains(&addr));
 
-		let addr = IPv4::try_from("192.168.10.120").unwrap();
+		let addr = IPv4::try_from("192.168.11.120").unwrap();
 		assert!(!fixture.contains(&addr));
 	}
 }
