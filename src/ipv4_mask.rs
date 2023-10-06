@@ -73,10 +73,6 @@ impl IPv4Mask {
 		IPv4::from(addr)
 	}
 
-	pub fn range(&self) -> (IPv4, IPv4) {
-		todo!()
-	}
-
 	fn format(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		write!(f, "/{}", self.1)
 	}
@@ -244,11 +240,6 @@ mod tests {
 		let actual = mask.broadcast_address(&addr);
 
 		assert_eq!(actual, IPv4::try_from("192.168.10.255").unwrap())
-	}
-
-	#[test]
-	fn range_test() {
-		todo!();
 	}
 
 	#[test]
