@@ -3,6 +3,7 @@ use std::fmt::{Debug, Display, Formatter};
 use crate::cidr_error::CidrError;
 use crate::ipv4::IPv4;
 use crate::ipv4_mask::IPv4Mask;
+use crate::ipv4_network_range::IPv4NetworkRange;
 
 #[derive(Eq, PartialEq)]
 pub struct Cidr(IPv4, IPv4Mask);
@@ -20,6 +21,10 @@ impl Cidr {
 	pub fn contains(&self, address: &IPv4) -> bool {
 		let tmp = self.1.network_address(address);
 		tmp == self.0
+	}
+
+	pub fn network_range(&self) -> IPv4NetworkRange {
+		IPv4NetworkRange::new(self.0, self.broadcast_address())
 	}
 
 	pub fn address(&self) -> &IPv4 {
@@ -148,5 +153,19 @@ mod tests {
 
 		let addr = IPv4::try_from("192.168.11.120").unwrap();
 		assert!(!fixture.contains(&addr));
+	}
+
+	#[test]
+	fn network_range_test() {
+		let fixture = Cidr::new(
+			IPv4::try_from("192.168.112.0").unwrap(),
+			IPv4Mask::new(20).unwrap(),
+		)
+		.unwrap();
+
+		let actual = fixture.network_range();
+
+		assert_eq!(fixture.address(), actual.begin());
+		assert_eq!(&fixture.broadcast_address(), actual.end());
 	}
 }
