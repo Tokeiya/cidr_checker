@@ -29,7 +29,6 @@ impl Display for CidrError {
 #[cfg(test)]
 mod tests {
 	use crate::cidr_error::CidrError;
-
 	#[test]
 	fn debug_test() {
 		let fixture = CidrError::InvalidAddressOrMask;
